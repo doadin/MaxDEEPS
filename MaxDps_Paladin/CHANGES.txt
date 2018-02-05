@@ -1,0 +1,12 @@
+tag 3eaeac3af99a88818fa86c1658501042b9f5f989 v7.3.0
+Author:	Pawel <zacdbg@gmail.com>
+Date:	Wed Dec 13 01:00:27 2017 +0100
+
+v7.3.0 - Version bump
+
+commit 8b0d0f4f9f6ae892cd6eccbcaf55a53a44a1654e
+Author: Pawel <zacdbg@gmail.com>
+Date:   Wed Dec 13 01:00:20 2017 +0100
+
+    v7.3.0 - Version bump
+

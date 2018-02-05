@@ -1,0 +1,12 @@
+tag 71c75e2cc914ef344193fb661260dac454e433ac v7.3.0
+Author:	Pawel <zacdbg@gmail.com>
+Date:	Wed Dec 13 00:25:49 2017 +0100
+
+v7.3.0 - Small Feral update
+
+commit c02786992598cfb93bf71d9f669fc1ddf7f121ee
+Author: Pawel <zacdbg@gmail.com>
+Date:   Wed Dec 13 00:25:42 2017 +0100
+
+    v7.3.0 - Small Feral update
+

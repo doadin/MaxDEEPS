@@ -1,0 +1,12 @@
+tag bedea54441648b9c68b344fdd4c054cf87c1b19b v7.3.0
+Author:	Pawel <zacdbg@gmail.com>
+Date:	Sun Oct 15 13:57:27 2017 +0200
+
+Rotation update version bump
+
+commit b1a35bf725ae834b6ed7f375f4c69db847cfa2b1
+Author: Pawel <zacdbg@gmail.com>
+Date:   Sun Oct 15 13:56:57 2017 +0200
+
+    v7.3.0 - Rotation update version bump
+

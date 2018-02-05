@@ -1,0 +1,6 @@
+commit eddd24b28e501ccc25418826a0a84f92dee41c4e
+Author: Pawel <zacdbg@gmail.com>
+Date:   Tue Jan 3 06:29:11 2017 +0100
+
+    v7.1.0 - Initial outlaw support
+

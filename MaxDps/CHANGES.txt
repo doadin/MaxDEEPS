@@ -1,0 +1,12 @@
+tag 6b27b0b6f5815795d5a0140f2d2f5fdc33db5389 v7.3.0.1
+Author:	Pawel <zacdbg@gmail.com>
+Date:	Wed Dec 13 00:24:31 2017 +0100
+
+v7.3.0.1 - Small api update
+
+commit 6301cb06bfc960232da619ba2810b1c3eca9d2e2
+Author: Pawel <zacdbg@gmail.com>
+Date:   Wed Dec 13 00:24:05 2017 +0100
+
+    v7.3.0.1 - Small api update
+
