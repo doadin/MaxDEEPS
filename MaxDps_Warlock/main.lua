@@ -65,6 +65,12 @@ local _PhantomSingularity = 205179;
 local _DeadwindHarvester = 216708;
 local _TormentedSouls = 216695;
 
+-- Demonology
+local _LordofFlames = 224103;
+local _GrimoireImp = 111859;
+local _ChannelDemonfire = 196447;
+local _Cataclysm = 152108;
+
 -- AURAS
 local _MoltenCore = 140074;
 local _HauntingSpirits = 157698;
@@ -75,6 +81,10 @@ local willBeEra = false;
 MaxDps.Warlock = {};
 
 function MaxDps.Warlock.CheckTalents()
+    MaxDps:CheckTalents();
+    talents = MaxDps.PlayerTalents;
+    _isChannelDemonfire = MaxDps:HasTalent(_ChannelDemonfire);
+    _isCataclysm = MaxDps:HasTalent(_Cataclysm);
 end
 
 function MaxDps:EnableRotationModule(mode)
@@ -95,7 +105,6 @@ end
 function MaxDps.Warlock.Affliction(_, timeShift, currentSpell, gcd, talents)
 	local ss = UnitPower('player', SPELL_POWER_SOUL_SHARDS);
 	local mana = MaxDps:Mana(0, timeShift);
-
 	local uaCount, uaCd = MaxDps.Warlock.UACount(timeShift);
 
 	if talents[_PhantomSingularity] then
@@ -140,10 +149,8 @@ end
 function MaxDps.Warlock.Demonology(_, timeShift, currentSpell, gcd, talents)
 	local ss = UnitPower('player', SPELL_POWER_SOUL_SHARDS);
 	local mana = MaxDps:Mana(0, timeShift);
-
 	local doom = MaxDps:TargetAura(_Doom, timeShift + 5);
 	local demoEmp = MaxDps:UnitAura(_DemonicEmpowerment, timeShift + 5, 'pet');
-
 	local doomguard = MaxDps:SpellAvailable(_SummonDoomguard, timeShift);
 	local tk = MaxDps:SpellAvailable(_ThalkielsConsumption, timeShift);
 
@@ -212,23 +219,19 @@ end
 ----------------------------------------------
 function MaxDps.Warlock.Destruction(_, timeShift, currentSpell, gcd, talents)
 	local ss = UnitPower('player', SPELL_POWER_SOUL_SHARDS);
-
 	local immo = MaxDps:TargetAura(_Immolate, timeShift + 5);
 	local health = UnitHealth('target');
-
 	local era = MaxDps:TargetAura(_Eradication, timeShift + 2);
+	local mana = MaxDps:Mana(0, timeShift);
+	local doomguard = MaxDps:SpellAvailable(_SummonDoomguard, timeShift);
+	local targetPh = MaxDps:TargetPercentHealth();
+	local cata = MaxDps:SpellAvailable(_Cataclysm, timeShift);
+
 	if wasEra and not era then
 		-- eradication went off
 		willBeEra = false;
 	end
 	wasEra = era;
-
-	local mana = MaxDps:Mana(0, timeShift);
-
-	local doomguard = MaxDps:SpellAvailable(_SummonDoomguard, timeShift);
-
-	local targetPh = MaxDps:TargetPercentHealth();
-	local cata = MaxDps:SpellAvailable(_Cataclysm, timeShift);
 
 	if not talents[_GrimoireofSupremacy] then
 		MaxDps:GlowCooldown(_SummonDoomguard, doomguard);
@@ -258,24 +261,40 @@ function MaxDps.Warlock.Destruction(_, timeShift, currentSpell, gcd, talents)
 	if talents[_EmpoweredLifeTap] and not MaxDps:Aura(_EmpoweredLifeTap, timeShift) then
 		return _LifeTap;
 	end
+    
+    if MaxDps:SpellAvailable(_GrimoireofSacrifice, timeShift) then
+        return _GrimoireofSacrifice
+    end
+    
+    if MaxDps:SpellAvailable(_LordofFlames, timeShift) then
+        return _SummonInfernal;
+    end
+    
+    if cata then
+        return _Cataclysm;
+    end
 
 	if ss >= 5 then
 		return _ChaosBolt;
 	end
-
-	if not immo and not MaxDps:SameSpell(currentSpell, _Immolate) then
-		return _Immolate;
+    
+	if talents[_Eradication] and not era and not willBeEra and ss > 1 and not MaxDps:SameSpell(currentSpell, _ChaosBolt) then
+		return _ChaosBolt;
 	end
-
+    
 	local drCD, drCharges, drMax = MaxDps:SpellCharges(_DimensionalRift, timeShift);
 	if drCharges >= 2 then
 		return _DimensionalRift
 	end
 
-	if ss >= 3 then
-		return _ChaosBolt;
+	if MaxDps:SpellAvailable(_GrimoireImp, timeShift) then
+		return _GrimoireImp;
 	end
-
+    
+	if MaxDps:SpellAvailable(_ChannelDemonfire, timeShift) and talents[_ChannelDemonfire] then
+		return _ChannelDemonfire;
+	end
+    
 	if talents[_Shadowburn] then
 		local sbCD, sbCharges = MaxDps:SpellCharges(_Shadowburn, timeShift);
 		if sbCharges > 1.5 then
@@ -287,9 +306,13 @@ function MaxDps.Warlock.Destruction(_, timeShift, currentSpell, gcd, talents)
 			return _Conflagrate;
 		end
 	end
-
-	if talents[_Eradication] and not era and not willBeEra and ss > 1 and not MaxDps:SameSpell(currentSpell, _ChaosBolt) then
+    
+	if ss >= 2 then
 		return _ChaosBolt;
+	end
+    
+	if not immo and not MaxDps:SameSpell(currentSpell, _Immolate) then
+		return _Immolate;
 	end
 
 	return _Incinerate;
