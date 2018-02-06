@@ -73,7 +73,7 @@ local _BoundingStride = 202163;
 local _EnragedRegeneration = 184364;
 local _CommandingShout = 97462;
 local _Carnage = 202922;
-local _FrothingBerserker = 215571; -- taqito
+local _FrothingBerserker = 215571;
 
 -- Arms
 local _ColossusSmash = 167105;
@@ -100,6 +100,8 @@ local _MasteryColossalMight = 76838;
 local _DoubleTime = 103827;
 local _DiebytheSword = 118038;
 local _CommandingShout = 97462;
+local _WeightedBlade = 253383;
+local _ExecutionersPrecision = 238147;
 
 -- talents
 local _isFocusedRage = false;
@@ -114,220 +116,283 @@ MaxDps.Warrior = {};
 local talents = {};
 
 function MaxDps.Warrior.CheckTalents()
-	MaxDps:CheckTalents();
-	talents = MaxDps.PlayerTalents;
-	_isRavager = MaxDps:HasTalent(_Ravager);
-	_isStormBolt = MaxDps:HasTalent(_StormBolt);
-	_isCarnage = MaxDps:HasTalent(_Carnage);
-	_isMassacre = MaxDps:HasTalent(_Massacre);
-	_isStormBolt = MaxDps:HasTalent(_StormBolt);
-	_isOverpower = MaxDps:HasTalent(_Overpower);
-	_isFocusedRage = MaxDps:HasTalent(_FocusedRage) or MaxDps:HasTalent(_FocusedRageArms);
-	_isDragonRoar = MaxDps:HasTalent(_DragonRoar);
+    MaxDps:CheckTalents();
+    talents = MaxDps.PlayerTalents;
+    _isRavager = MaxDps:HasTalent(_Ravager);
+    _isStormBolt = MaxDps:HasTalent(_StormBolt);
+    _isCarnage = MaxDps:HasTalent(_Carnage);
+    _isMassacre = MaxDps:HasTalent(_Massacre);
+    _isStormBolt = MaxDps:HasTalent(_StormBolt);
+    _isOverpower = MaxDps:HasTalent(_Overpower);
+    _isFocusedRage = MaxDps:HasTalent(_FocusedRage) or MaxDps:HasTalent(_FocusedRageArms);
+    _isDragonRoar = MaxDps:HasTalent(_DragonRoar);
+    _isFrothingBerserker = MaxDps:HasTalent(_FrothingBerserker);
 end
 
 function MaxDps:EnableRotationModule(mode)
-	mode = mode or 1;
-	MaxDps.Description = 'Warrior Module [Fury, Arms, Protection]';
-	MaxDps.ModuleOnEnable = MaxDps.Warrior.CheckTalents;
-	if mode == 1 then
-		MaxDps.NextSpell = MaxDps.Warrior.Arms;
-	end;
-	if mode == 2 then
-		MaxDps.NextSpell = MaxDps.Warrior.Fury;
-	end;
-	if mode == 3 then
-		MaxDps.NextSpell = MaxDps.Warrior.Protection;
-	end;
+    mode = mode or 1;
+    MaxDps.Description = 'Warrior Module [Fury, Arms, Protection]';
+    MaxDps.ModuleOnEnable = MaxDps.Warrior.CheckTalents;
+    if mode == 1 then
+        MaxDps.NextSpell = MaxDps.Warrior.Arms;
+    end;
+    if mode == 2 then
+        MaxDps.NextSpell = MaxDps.Warrior.Fury;
+    end;
+    if mode == 3 then
+        MaxDps.NextSpell = MaxDps.Warrior.Protection;
+    end;
 end
 
 function MaxDps.Warrior.Arms()
-	local timeShift, currentSpell, gcd = MaxDps:EndCast();
+    local timeShift, currentSpell, gcd = MaxDps:EndCast();
+    local rage = UnitPower('player', SPELL_POWER_RAGE);
+    local rageMax = UnitPowerMax('player', SPELL_POWER_RAGE);
+    local cs = MaxDps:SpellAvailable(_ColossusSmash, timeShift);
+    local ms = MaxDps:SpellAvailable(_MortalStrike, timeShift);
+    local csAura = MaxDps:TargetAura(_ColossusSmash, timeShift);
+    local rendAura = MaxDps:TargetAura(_Rend, timeShift);
+    local sd = MaxDps:Aura(_ShatteredDefenses, timeShift);
+    local bcAura = MaxDps:Aura(_BattleCry, timeShift);
+    local wbAura = MaxDps:Aura(_WeightedBlade, timeShift);
+    local epAura = MaxDps:Aura(_ExecutionersPrecision, timeShift);
+    local ph = MaxDps:TargetPercentHealth();
+    --local inRange = IsSpellInRange(Charge, target)
+    local canExecute = (rage >= 25 and ph < 0.2) or MaxDps:Aura(_StoneHeart, timeShift);
 
-	local rage = UnitPower('player', SPELL_POWER_RAGE);
-	local rageMax = UnitPowerMax('player', SPELL_POWER_RAGE);
+    MaxDps:GlowCooldown(_BattleCry, MaxDps:SpellAvailable(_BattleCry, timeShift));
+    MaxDps:GlowCooldown(_BladestormArms, MaxDps:SpellAvailable(_BladestormArms, timeShift));
+    
+    if ph > 0.2 then
+    
+        --if MaxDps:SpellAvailable(_Charge, timeShift) and rage >= 20 and inRange == 0 then
+        --    return _Charge;
+        --end
+        
+        if MaxDps:SpellAvailable(_Rend, timeShift) and rage >= 30 and talents[_Rend] then
+            return _Rend;
+        end
+        
+        if cs and (not _isFocusedRage or not sd) then
+            return _ColossusSmash;
+        end
+        
+        if MaxDps:SpellAvailable(_Warbreaker, timeShift) and not csAura and (not _isFocusedRage or not sd) and not ms then
+            return _Warbreaker;
+        end
+        
+        if MaxDps:SpellAvailable(_Bladestorm, timeShift) and MaxDps:Aura(_BattleCry, timeShift) then
+            return _Bladestorm;
+        end
+        
+        if canExecute and MaxDps:Aura(_StoneHeart, timeShift) then
+            return _Execute;
+        end
+        
+        if MaxDps:SpellAvailable(_MortalStrike, timeShift) then
+            return _MortalStrike;
+        end
+        
+        if MaxDps:SpellAvailable(_Overpower, timeShift) and talents[_Overpower] then
+            return _Overpower;
+        end
+        
+        if MaxDps:SpellAvailable(_Rend, timeShift) and rage >= 30 and not rendAura and talents[_Rend] then
+            return _Rend;
+        end
+        
+        if MaxDps:SpellAvailable(_Slam, timeShift) and not talents[_FervorofBattle] then
+            return _Slam;
+        elseif MaxDps:SpellAvailable(_Whirlwind, timeShift) and talents[_FervorofBattle] then
+            return _Whirlwind;
+        end
+        
+        if MaxDps:SpellAvailable(_Bladestorm, timeShift) then
+            return _Bladestorm;
+        end
+    end
 
-	local cs = MaxDps:SpellAvailable(_ColossusSmash, timeShift);
-	local ms = MaxDps:SpellAvailable(_MortalStrike, timeShift);
+    if ph < 0.2 then
+        if MaxDps:SpellAvailable(_Whirlwind, timeShift) and csAura and MaxDps:Aura(_WeightedBlade, timeShift + 3) then
+            return _Whirlwind;
+        end
+        
+        if cs and not csAura and not sd then
+            return _ColossusSmash;
+        end
+        
+        if MaxDps:SpellAvailable(_Warbreaker, timeShift) and not csAura and sd then
+            return _Warbreaker;
+        end
+        
+        if ms and MaxDps:Aura(_ExecutionersPrecision, timeShift + 2) and sd then
+            return _MortalStrike;
+        end
 
-	local csAura = MaxDps:TargetAura(_ColossusSmash, timeShift);
-	local sd = MaxDps:Aura(_ShatteredDefenses, timeShift);
-	local bcAura = MaxDps:Aura(_BattleCry, timeShift);
-
-	local ph = MaxDps:TargetPercentHealth();
-
-	MaxDps:GlowCooldown(_BattleCry, MaxDps:SpellAvailable(_BattleCry, timeShift));
-	MaxDps:GlowCooldown(_BladestormArms, MaxDps:SpellAvailable(_BladestormArms, timeShift));
-
-	if cs and (not _isFocusedRage or not sd) then
-		return _ColossusSmash;
-	end
-
-	if MaxDps:SpellAvailable(_Warbreaker, timeShift) and not csAura and (not _isFocusedRage or not sd) then
-		return _Warbreaker;
-	end
-
-	if not _isFocusedRage and _isOverpower and MaxDps:SpellAvailable(_Overpower, timeShift) and rage >= 10 then
-		return _Overpower;
-	end
-
-	if (ph < 0.2 and ((sd and not _isFocusedRage) or _isFocusedRage)) or MaxDps:Aura(_StoneHeart, timeShift) then
-		return _ExecuteArms;
-	end
-
-	if _isFocusedRage and MaxDps:SpellAvailable(_FocusedRageArms, timeShift) and (csAura or bcAura) then
-		return _FocusedRage;
-	end
-
-	if ms then
-		return _MortalStrike;
-	end
-
-	if _isFocusedRage then
-		if rage > 32 and not ms and not cs then
-			return _Slam;
-		end
-
-		if rage > rageMax - 25 then
-			return _FocusedRageArms;
-		end
-
-		return nil;
-	else
-		return _Slam;
-	end
+        if canExecute and MaxDps:Aura(_StoneHeart, timeShift) then
+            return _Execute;
+        end
+    end
 end
 
 function MaxDps.Warrior.Fury()
-	local timeShift, currentSpell, gcd = MaxDps:EndCast();
+    local timeShift, currentSpell, gcd = MaxDps:EndCast();
+    local rage = UnitPower('player', SPELL_POWER_RAGE);
+    local rageMax = UnitPowerMax('player', SPELL_POWER_RAGE);
+    local bt = MaxDps:SpellAvailable(_Bloodthirst, timeShift);
+    local enrage = MaxDps:Aura(_Enrage, timeShift);
+    --local canExecute = (rage >= 25 and ph < 0.2) or MaxDps:Aura(_StoneHeart, timeShift);
+    --local inRange = IsSpellInRange(Charge, target)
+    local _, _, _, _, _, Frenzyduration, FrenzyexpirationTime = UnitBuff("player", "Frenzy")
+    local rampCost = 85;
+    if talents[_Carnage] then
+        rampCost = 70;
+    elseif talents[_FrothingBerserker] then
+        rampCost = 100;
+    end
 
-	local rage = UnitPower('player', SPELL_POWER_RAGE);
-	local rageMax = UnitPowerMax('player', SPELL_POWER_RAGE);
+    local ph = MaxDps:TargetPercentHealth();
 
-	local bt = MaxDps:SpellAvailable(_Bloodthirst, timeShift);
+    MaxDps:GlowCooldown(_BattleCry, MaxDps:SpellAvailable(_BattleCry, timeShift));
+    if talents[_DragonRoar] then
+        MaxDps:GlowCooldown(_DragonRoar, MaxDps:SpellAvailable(_DragonRoar, timeShift));
+    elseif talents[_Bladestorm] then
+        MaxDps:GlowCooldown(_Bladestorm, MaxDps:SpellAvailable(_Bladestorm, timeShift));
+    end
 
-	local enrage = MaxDps:Aura(_Enrage, timeShift);
-	local rampCost = 85;
-	if talents[_Carnage] then
-		rampCost = 70;
-	elseif talents[_FrothingBerserker] then -- taqito
-		rampCost = 100; -- taqito 100 since we want Forth up before using Ramp
-	end
+    if talents[_Bloodbath] then
+        MaxDps:GlowCooldown(_Bloodbath, MaxDps:SpellAvailable(_Bloodbath, timeShift));
+    end
 
-	local ph = MaxDps:TargetPercentHealth();
+    if talents[_Outburst] then
+        MaxDps:GlowCooldown(_BerserkerRage, MaxDps:SpellAvailable(_BerserkerRage, timeShift));
+    elseif talents[_Avatar] then
+        MaxDps:GlowCooldown(_Avatar, MaxDps:SpellAvailable(_Avatar, timeShift));
+    end
 
-	MaxDps:GlowCooldown(_BattleCry, MaxDps:SpellAvailable(_BattleCry, timeShift));
-	-- taqito Added ifs talents below to keep from constantaly running even if you dont have the talent
-	if talents[_DragonRoar] then
-		MaxDps:GlowCooldown(_DragonRoar, MaxDps:SpellAvailable(_DragonRoar, timeShift));
-	end
+    -- rotation during battlecry
+    if MaxDps:Aura(_BattleCry) then
+        if talents[_Avatar] and MaxDps:SpellAvailable(_Avatar, timeShift) then
+            return _Avatar;
+        end
+        
+        if MaxDps:SpellAvailable(_OdynsFury, timeShift) then
+            return _OdynsFury;
+        end
 
-	if talents[_Bloodbath] then
-		MaxDps:GlowCooldown(_Bloodbath, MaxDps:SpellAvailable(_Bloodbath, timeShift));
-	end
+        if MaxDps:SpellAvailable(_RagingBlow, timeShift) and enrage or talents[_InnerRage] then
+            return _RagingBlow;
+        end
 
-	if talents[_Outburst] then
-		MaxDps:GlowCooldown(_BerserkerRage, MaxDps:SpellAvailable(_BerserkerRage, timeShift));
-	elseif talents[_Avatar] then
-		MaxDps:GlowCooldown(_Avatar, MaxDps:SpellAvailable(_Avatar, timeShift));
-	end
+        if bt then
+            return _Bloodthirst;
+        end
+    end
+    
+    if  ph > 0.2 then
+    
+        --if MaxDps:SpellAvailable(_Charge, timeShift) and rage >= 20 and inRange == 0 then
+        --    return _Charge;
+        --end
+        
+        if talents[_DragonRoar] then
+            return _DragonRoar;
+        end
+        
+        --if talents[_Frenzy] and not MaxDps:Aura(_Frenzy, timeShift) or (FrenzyexpirationTime - GetTime() >= 2) then
+        --    return _Frenzy;
+        --end
+        
+        if talents[_Frenzy] and not MaxDps:Aura(_Frenzy, timeShift) then
+            return _Frenzy;
+        end
+        
+        if (rage >= rampCost and not enrage) or rage >= 100 or MaxDps:Aura(_Massacre, timeShift) then
+            return _Rampage;
+        end
+        
+        if talents[_InnerRage] then
+            return _RagingBlow;
+        end
+        
+        if bt then
+            return _Bloodthirst;
+        end
 
-	-- rotation during battlecry
-	if MaxDps:Aura(_BattleCry) then
-		if talents[_Avatar] and MaxDps:SpellAvailable(_Avatar, timeShift) then
-			return _Avatar;
-		end
+        if MaxDps:Aura(_WreckingBall, timeShift) then
+            return _WreckingBall;
+        end
+        
+        if MaxDps:SpellAvailable(_RagingBlow, timeShift + 0.3) and not talents[_InnerRage] and enrage then
+            return _RagingBlow;
+        end
+        
+        if not bt and not enrage then
+            return _FuriousSlash;
+        end
 
-		if MaxDps:SpellAvailable(_RagingBlow, timeShift) then
-			return _RagingBlow;
-		end
+    end
 
-		if MaxDps:SpellAvailable(_OdynsFury, timeShift) then
-			return _OdynsFury;
-		end
+    if ph < 0.2 then
+    
+        --if MaxDps:SpellAvailable(_Charge, timeShift) and rage >= 20 and inRange == 0 then
+        --    return _Charge;
+        --end
+        
+        if bt and not enrage then
+            return _Bloodthirst;
+        end
+        
+        if (rage >= 25 and enrage) or MaxDps:Aura(_StoneHeart, timeShift) then
+            return _Execute;
+        end
+        
+        if MaxDps:SpellAvailable(_RagingBlow, timeShift + 0.3) and enrage then
+            return _RagingBlow;
+        end
 
-		if bt then
-			return _Bloodthirst;
-		end
-	end
-
-	local canExecute = (rage >= 25 and ph < 0.2) or MaxDps:Aura(_StoneHeart, timeShift);
-	if talents[_Massacre] and not MaxDps:Aura(_Massacre, timeShift) and not MaxDps:Aura(_Enrage, timeShift) and
-		canExecute then
-		return _Execute;
-	end
-
-	if (rage >= rampCost and not enrage) or rage >= 100 or MaxDps:Aura(_Massacre, timeShift) then
-		return _Rampage;
-	end
-
-	if bt and not enrage then
-		return _Bloodthirst;
-	end
-
-	if MaxDps:SpellAvailable(_OdynsFury, timeShift) then
-		return _OdynsFury;
-	end
-
-	if talents[_StormBolt] and MaxDps:SpellAvailable(_StormBolt, timeShift) then
-		return _StormBolt;
-	end
-
-	if (rage >= 25 and ph < 0.2 and enrage) or MaxDps:Aura(_StoneHeart, timeShift) then
-		return _Execute;
-	end
-
-	if MaxDps:Aura(_WreckingBall, timeShift) then
-		return _Whirlwind;
-	end
-
-	if MaxDps:SpellAvailable(_RagingBlow, timeShift + 0.3) then
-		return _RagingBlow;
-	end
-
-	if bt then
-		return _Bloodthirst;
-	end
-
-	return _FuriousSlash;
+        if not bt and not enrage then
+            return _FuriousSlash;
+        end
+    end
 end
 
 function MaxDps.Warrior.Protection()
-	local timeShift, currentSpell, gcd = MaxDps:EndCast();
+    local timeShift, currentSpell, gcd = MaxDps:EndCast();
 
-	local rage = UnitPower('player', SPELL_POWER_RAGE);
-	local rageMax = UnitPowerMax('player', SPELL_POWER_RAGE);
+    local rage = UnitPower('player', SPELL_POWER_RAGE);
+    local rageMax = UnitPowerMax('player', SPELL_POWER_RAGE);
 
-	local revenge = MaxDps:SpellAvailable(_Revenge, timeShift);
-	local sb = MaxDps:SpellAvailable(_StormBolt, timeShift);
-	local ravager = MaxDps:SpellAvailable(_Ravager, timeShift);
+    local revenge = MaxDps:SpellAvailable(_Revenge, timeShift);
+    local sb = MaxDps:SpellAvailable(_StormBolt, timeShift);
+    local ravager = MaxDps:SpellAvailable(_Ravager, timeShift);
 
-	local ph = MaxDps:TargetPercentHealth();
+    local ph = MaxDps:TargetPercentHealth();
 
-	MaxDps:GlowCooldown(_Ravager, _isRavager and ravager);
-	MaxDps:GlowCooldown(_ThunderClap, MaxDps:SpellAvailable(_ThunderClap, timeShift));
-	MaxDps:GlowCooldown(_Shockwave, MaxDps:SpellAvailable(_Shockwave, timeShift));
-	MaxDps:GlowCooldown(_NeltharionsFury, MaxDps:SpellAvailable(_NeltharionsFury, timeShift));
-	MaxDps:GlowCooldown(_IgnorePain, MaxDps:SpellAvailable(_IgnorePain, timeShift) and rage >= 20 and
-			not MaxDps:Aura(_IgnorePain, timeShift));
-	MaxDps:GlowCooldown(_ShieldBlock, MaxDps:SpellAvailable(_ShieldBlock, timeShift) and rage >= 15 and
-			not MaxDps:Aura(_ShieldBlock, timeShift));
+    MaxDps:GlowCooldown(_Ravager, _isRavager and ravager);
+    MaxDps:GlowCooldown(_ThunderClap, MaxDps:SpellAvailable(_ThunderClap, timeShift));
+    MaxDps:GlowCooldown(_Shockwave, MaxDps:SpellAvailable(_Shockwave, timeShift));
+    MaxDps:GlowCooldown(_NeltharionsFury, MaxDps:SpellAvailable(_NeltharionsFury, timeShift));
+    MaxDps:GlowCooldown(_IgnorePain, MaxDps:SpellAvailable(_IgnorePain, timeShift) and rage >= 20 and
+            not MaxDps:Aura(_IgnorePain, timeShift));
+    MaxDps:GlowCooldown(_ShieldBlock, MaxDps:SpellAvailable(_ShieldBlock, timeShift) and rage >= 15 and
+            not MaxDps:Aura(_ShieldBlock, timeShift));
 
-	if MaxDps:SpellAvailable(_ShieldSlam, timeShift) then
-		return _ShieldSlam;
-	end
+    if MaxDps:SpellAvailable(_ShieldSlam, timeShift) then
+        return _ShieldSlam;
+    end
 
-	if revenge then
-		return _Revenge;
-	end
+    if revenge then
+        return _Revenge;
+    end
 
-	if _isStormBolt and sb then
-		return _StormBolt;
-	end
+    if _isStormBolt and sb then
+        return _StormBolt;
+    end
 
-	if not talents[_Devastator] then
-		return _Devastate;
-	else
-		return nil;
-	end
+    if not talents[_Devastator] then
+        return _Devastate;
+    else
+        return nil;
+    end
 end
