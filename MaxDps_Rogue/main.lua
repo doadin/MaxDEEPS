@@ -185,7 +185,7 @@ function MaxDps.Rogue.Outlaw()
         return _MarkedforDeath;
     end
     
-    if combo >= 5 and MaxDps:Aura(_GreenskinsWaterloggedWristcuffs, timeShift) or and MaxDps:Aura(_MasterAssassinsInitiative, timeShift) then
+    if combo >= 5 and MaxDps:Aura(_GreenskinsWaterloggedWristcuffs, timeShift) and MaxDps:Aura(_MasterAssassinsInitiative, timeShift) then
         return _BetweentheEyes;
     end
 
